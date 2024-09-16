@@ -1,40 +1,53 @@
--- Whether or not it's enabled
+-- Создание ConVar для включения/выключения аддона
 CreateConVar("doorbreach_enabled", 1)
 
--- Starting health for doors
+-- Стартовое количество здоровья для дверей
 CreateConVar("doorbreach_health", 100)
 
--- Damage multiplier for handle shots
+-- Множитель урона для выстрелов по ручке
 CreateConVar("doorbreach_handlemultiplier", 2)
 
--- Time, in seconds, to wait before resetting the door's health
+-- Время до восстановления здоровья двери (в секундах)
 CreateConVar("doorbreach_respawntime", 30)
 
--- Max distance from the handle to still count as a handle shot
+-- Максимальное расстояние от ручки, чтобы считаться выстрелом по ручке
 local maxHandleDistance = 5
 
--- Classname for doors
+-- Класс двери
 local entityType = "prop_door_rotating"
 
--- Handle door damage
+-- Обработка урона двери
 hook.Add("EntityTakeDamage", "DoorBreachDamageDetection", function(ent, dmg)
     if not IsValid(ent) then return end
     if not GetConVar("doorbreach_enabled"):GetBool() then return end
 
-    -- If it's a door that has been damaged
+    -- Проверяем, является ли объект дверью
     if ent:GetClass() == entityType then
-        -- Initialize door health if not done already
+        -- Инициализация здоровья двери, если оно не установлено
         if not ent.DoorBreachHealth then
             ent.DoorBreachHealth = GetConVar("doorbreach_health"):GetFloat()
         end
 
-        -- If the door hasn't been breached yet
+        -- Если дверь ещё не разрушена
         if not ent.DoorBreachExploded then
-            -- Store the base damage
+            -- Получаем источник урона (кто или что наносит урон)
+            local attacker = dmg:GetAttacker()
+
+            -- Проверяем, если урон наносится игроком и оружие в руках игрока
+            if attacker:IsPlayer() and attacker:GetActiveWeapon():IsValid() then
+                local weapon = attacker:GetActiveWeapon()
+
+                -- Проверяем тип оружия (например, запрещаем ломать руками)
+                if weapon:GetClass() == "weapon_fists" then
+                    return -- Отменяем урон, если это удар кулаками (руками)
+                end
+            end
+
+            -- Если урон не отменён, продолжаем обработку
             local dam = dmg:GetDamage()
             local damPos = dmg:GetDamagePosition()
 
-            -- If damage is near the handle, apply multiplier
+            -- Проверка урона в районе ручки двери
             local bone = ent:LookupBone("handle")
             if bone then
                 local handlePos = ent:GetBonePosition(bone)
@@ -43,22 +56,18 @@ hook.Add("EntityTakeDamage", "DoorBreachDamageDetection", function(ent, dmg)
                 end
             end
 
-            -- Apply damage to the door
+            -- Применяем урон к двери
             ent.DoorBreachHealth = ent.DoorBreachHealth - dam
 
-            -- If the door's health reaches zero
+            -- Если здоровье двери достигло нуля, "взрываем" дверь
             if ent.DoorBreachHealth <= 0 then
                 ent.DoorBreachExploded = true
-
-                -- Unlock and open the door
                 ent:Fire("unlock", "", 0)
                 ent:Fire("open", "", 0)
 
-                -- Set a timer to reset only the health of the door
+                -- Устанавливаем таймер для восстановления здоровья двери
                 timer.Simple(GetConVar("doorbreach_respawntime"):GetFloat(), function()
                     if not IsValid(ent) then return end
-
-                    -- Reset the door's health and state
                     ent.DoorBreachExploded = nil
                     ent.DoorBreachHealth = GetConVar("doorbreach_health"):GetFloat()
                 end)
@@ -67,12 +76,13 @@ hook.Add("EntityTakeDamage", "DoorBreachDamageDetection", function(ent, dmg)
     end
 end)
 
--- Handle player use of breached doors
+-- Обработка взаимодействия с дверью игроком
 hook.Add("PlayerUse", "DoorBreachSuppressUse", function(ply, ent)
     if not IsValid(ent) then return end
 
-    -- If the door is breached and health has not yet been restored, prevent closing
+    -- Если дверь разрушена и здоровье ещё не восстановлено
     if ent.DoorBreachExploded and ent:GetClass() == entityType then
-        return false -- Disallow any interaction (like closing)
+        -- Предотвращаем взаимодействие с дверью
+        return false
     end
 end)
