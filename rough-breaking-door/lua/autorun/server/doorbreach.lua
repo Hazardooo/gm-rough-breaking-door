@@ -11,7 +11,6 @@ local doorBreachRespawnTime = GetConVar("doorbreach_respawntime")
 local doorBreachSpeed = GetConVar("doorbreach_speed")
 
 local maxHandleDistance = 5
-local defaultDoorSpeed = 200
 local entityType = "prop_door_rotating"
 
 hook.Add("EntityTakeDamage", "DoorBreachDamageDetection", function(ent, dmg)
@@ -50,6 +49,7 @@ hook.Add("EntityTakeDamage", "DoorBreachDamageDetection", function(ent, dmg)
 
     if ent.DoorBreachHealth <= 0 then
         ent.DoorBreachExploded = true
+        local defaultDoorSpeed = ent:GetInternalVariable("speed")
         ent:Fire("SetSpeed", doorBreachSpeed:GetString())
         ent:Fire("unlock", "", 0)
         ent:Fire("open", "", 0)
