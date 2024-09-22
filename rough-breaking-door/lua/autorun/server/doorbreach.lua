@@ -2,7 +2,7 @@ CreateConVar("doorbreach_enabled", 1, FCVAR_ARCHIVE, "Включает или в
 CreateConVar("doorbreach_health", 100, FCVAR_ARCHIVE, "Начальное здоровье двери")
 CreateConVar("doorbreach_handlemultiplier", 2, FCVAR_ARCHIVE, "Множитель урона при попадании по ручке двери")
 CreateConVar("doorbreach_respawntime", 30, FCVAR_ARCHIVE, "Время восстановления двери после взлома")
-CreateConVar("doorbreach_speed", 200, FCVAR_ARCHIVE, "Скорость открытия двери")
+CreateConVar("doorbreach_speed", 500, FCVAR_ARCHIVE, "Скорость открытия двери")
 
 local doorBreachEnabled = GetConVar("doorbreach_enabled")
 local doorBreachHealth = GetConVar("doorbreach_health")
