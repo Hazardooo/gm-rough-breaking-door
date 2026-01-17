@@ -1,3 +1,4 @@
+# Rough breaking door
 This addon introduces a mechanic for opening doors with weapons. Instead of breaking down, the doors open! After being breached, the door cannot be used for a set period of time.
 
 # Features:
